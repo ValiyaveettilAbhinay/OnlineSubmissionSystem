@@ -16,20 +16,27 @@ const submitTask = async (req, res) => {
             return res.status(404).json({ message: "The assignment you are trying to submit to does not exist." });
         }
 
+        // 🛠️ IDENTITY EXTRACTION GUARD: Accommodates both req.user.id and req.user._id token variations
+        const verifiedStudentId = req.user?.id || req.user?._id;
+
+        if (!verifiedStudentId) {
+            return res.status(401).json({ message: "Unauthorized: User session token identification string not resolved." });
+        }
+
         // Prevent duplicate submissions from the same student for the same assignment
         const existingSubmission = await Submission.findOne({
             assignment: assignmentId,
-            student: req.user.id
+            student: verifiedStudentId
         });
 
         if (existingSubmission) {
             return res.status(409).json({ message: "You have already submitted work for this assignment. Try updating it instead." });
         }
 
-        // Save submission. Pull student ID directly from the token to prevent identity fraud
+        // Save submission with the verified ID string
         const newSubmission = new Submission({
             assignment: assignmentId,
-            student: req.user.id, 
+            student: verifiedStudentId, 
             submissionData
         });
 
@@ -49,7 +56,7 @@ const submitTask = async (req, res) => {
 // 2. GRADE A SUBMISSION (Teachers Only)
 const gradeSubmission = async (req, res) => {
     try {
-        const { submissionId } = req.params; // Passed in URL: /api/submissions/:submissionId/grade
+        const { submissionId } = req.params; 
         const { grade, feedback } = req.body;
 
         if (grade === undefined || grade === null) {

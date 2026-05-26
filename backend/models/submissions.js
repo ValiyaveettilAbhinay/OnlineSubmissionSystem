@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+require("./assignments");
+require("./users"); 
 
 const SubmissionSchema = new mongoose.Schema({
     assignment: { 
@@ -16,4 +18,5 @@ const SubmissionSchema = new mongoose.Schema({
     feedback: { type: String, default: "" }
 }, { timestamps: true });
 
-module.exports = mongoose.model("Submission", SubmissionSchema);
+// Check to see if model is already compiled to prevent model re-compilation over-writes
+module.exports = mongoose.models.Submission || mongoose.model("Submission", SubmissionSchema);
